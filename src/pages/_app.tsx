@@ -5,7 +5,7 @@ import Header from '../components/Header';
 function MyApp({ Component, pageProps }: AppProps): JSX.Element {
   return (
     <>
-      <Header />
+      {/* <Header /> */}
       <Component {...pageProps} />
     </>
   );

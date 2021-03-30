@@ -1,12 +1,16 @@
 import { GetStaticProps } from 'next';
 import { FiCalendar, FiUser } from 'react-icons/fi';
-
+import Link from 'next/link';
 import Prismic from '@prismicio/client';
 import { RichText } from 'prismic-dom';
 import { useState } from 'react';
+import { format, parseISO } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import Head from 'next/head';
 import { getPrismicClient } from '../services/prismic';
 import commonStyles from '../styles/common.module.scss';
 import styles from './home.module.scss';
+import Header from '../components/Header';
 
 interface Post {
   uid?: string;
@@ -43,19 +47,33 @@ export default function Home({
   }
   return (
     <>
+      <Head>
+        <title>Home | spacetraveling</title>
+      </Head>
+      <Header />
       <main className={styles.container}>
         {posts.map(post => (
-          <a key={post.uid}>
-            <strong>{post.data.title}</strong>
-            <p>{post.data.subtitle}.</p>
-            <div>
-              <FiCalendar color="#BBBBBB" />
-              <time>{post.first_publication_date}</time>
+          <Link key={post.uid} href={`post/${post.uid}`}>
+            <a>
+              <strong>{post.data.title}</strong>
+              <p>{post.data.subtitle}</p>
+              <div>
+                <FiCalendar color="#BBBBBB" />
+                <time>
+                  {format(
+                    parseISO(post.first_publication_date),
+                    'dd MMM yyyy',
+                    {
+                      locale: ptBR,
+                    }
+                  )}
+                </time>
 
-              <FiUser color="#BBBBBB" />
-              <span>{post.data.author}</span>
-            </div>
-          </a>
+                <FiUser color="#BBBBBB" />
+                <span>{post.data.author}</span>
+              </div>
+            </a>
+          </Link>
         ))}
         {nextPage && (
           <button
@@ -77,7 +95,7 @@ export const getStaticProps: GetStaticProps = async () => {
   const postsResponse = await prismic.query(
     [Prismic.predicates.at('document.type', 'posts')],
     {
-      fetch: ['posts.title', 'posts.author', 'posts.subtitle'],
+      fetch: ['publication.title', 'publication.content'],
       pageSize: 1,
     }
   );
@@ -85,13 +103,7 @@ export const getStaticProps: GetStaticProps = async () => {
   const results = postsResponse.results.map(post => {
     return {
       uid: post.uid,
-      first_publication_date: new Date(
-        post.last_publication_date
-      ).toLocaleDateString('pt-BR', {
-        day: '2-digit',
-        month: 'long',
-        year: 'numeric',
-      }),
+      first_publication_date: post.first_publication_date,
       data: {
         title: post.data.title,
         subtitle: post.data.subtitle,
@@ -99,8 +111,6 @@ export const getStaticProps: GetStaticProps = async () => {
       },
     };
   });
-
-  // console.log(postsResponse);
 
   return {
     props: {
